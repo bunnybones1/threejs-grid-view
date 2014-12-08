@@ -1,0 +1,30 @@
+{
+  "name": "threejs-grid-view",
+  "main": "index.js",
+  "version": "1.0.0",
+  "authors": [
+    "Tomasz Dysinski <oz@bunnybones.com>"
+  ],
+  "description": "A multiview grid for threejs scenes.",
+  "moduleType": [
+    "node"
+  ],
+  "keywords": [
+    "threejs",
+    "grid",
+    "view"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+    "three.js": "*"
+  }
+}

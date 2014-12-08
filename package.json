@@ -1,0 +1,43 @@
+{
+  "name": "threejs-grid-view",
+  "version": "1.0.0",
+  "description": "A multiview grid for threejs scenes.",
+  "main": "index.js",
+  "license": "MIT",
+  "author": {
+    "name": "Tomasz Dysinski",
+    "email": "oz@bunnybones.com",
+    "url": "https://github.com/bunnybones1"
+  },
+  "dependencies": {
+    "grid-layout-solver": "^2.0.0",
+    "input-resize": "^2.1.0",
+    "threejs-camera-display-object3d": "^1.0.5",
+    "threejs-helper-set-plane-to-orthographic-rectangle": "^1.0.0"
+  },
+  "devDependencies": {
+    "input-unified-pointers": "^2.0.1",
+    "loadandrunscripts": "^1.0.0",
+    "lodash": "^2.4.1",
+    "threejs-checkerroom": "^1.0.0",
+    "threejs-light-probe": "^1.1.0",
+    "threejs-managed-view": "^2.2.0",
+    "urlparams": "^1.0.1"
+  },
+  "scripts": {
+    "test": "beefy test.js --live --open"
+  },
+  "keywords": [
+    "threejs",
+    "grid",
+    "view"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bunnybones1/threejs-grid-view.git"
+  },
+  "homepage": "https://github.com/bunnybones1/threejs-grid-view",
+  "bugs": {
+    "url": "https://github.com/bunnybones1/threejs-grid-view/issues"
+  }
+}
