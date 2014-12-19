@@ -21,6 +21,7 @@ function GridView(params) {
 		renderRegion: true,
 		scrollX: 0,
 		scrollY: 0,
+		autoClear: undefined,
 		totalCells: 0,
 		gridCellPositioner: gridCellPositioner
 	}, params || {});
@@ -80,7 +81,10 @@ GridView.prototype = {
 	},
 	render: function() {
 		this.renderCellTextures();
-		this.renderer.autoClear = false;
+		if(this.autoClear !== undefined) {
+			this.backupAutoClear = this.renderer.autoClear;
+			this.renderer.autoClear = this.autoClear;
+		}
 		if(this.renderRegion) {
 			var w = ~~(this.canvas.width / this.renderer.devicePixelRatio);
 			var h = ~~(this.canvas.height / this.renderer.devicePixelRatio);
@@ -106,7 +110,9 @@ GridView.prototype = {
 		} else {
 			this.renderer.render(this.scene, this.camera);
 		}
-		this.renderer.autoClear = true;
+		if(this.autoClear !== undefined) {
+			this.renderer.autoClear = this.backupAutoClear;
+		}
 	},
 	createCell: function(cellProps) {
 		if(!cellProps.camera) throw new Error("Please provide a camera");
