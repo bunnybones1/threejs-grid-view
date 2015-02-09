@@ -3,7 +3,9 @@ var onReady = function() {
 		UnifiedPointers = require('input-unified-pointers'),
 		GridView = require('./'),
 		getUrlParam = require('urlparams').getParam,
-		Resize = require('input-resize');
+		Resize = require('input-resize'),
+		RenderRegion = require('threejs-render-region'),
+		ScrollPhysics = require('touch-scroll-physics');
 
 	var TestScene = require('./TestScene');
 	var testScene = new TestScene();
@@ -12,7 +14,19 @@ var onReady = function() {
 		scene: testScene.scene,
 		camera: testScene.camera,
 		stats: true,
+		useRafPolyfill: false
 	});
+
+	testScene.bindRenderer(view.renderer);
+	view.renderManager.onEnterFrame.add(testScene.onEnterFrame);
+	// view.skipRender = true;
+	// 
+	var w = window.innerWidth;
+	var h = window.innerHeight;
+	var offsetGridX = w * .5;
+	var renderRegionLeft = new RenderRegion(w, h, 0, 0, w*.5, h);
+	var renderRegionRight = new RenderRegion(w, h, w*.5, 0, w*.5, h);
+
 
 	var totalViews = 40;
 	var cellsPerPage = 12;
@@ -32,20 +46,17 @@ var onReady = function() {
 		gridCameras.push(camera);
 	}
 
-	var rectangle;
-	function setRectangle() {
-		rectangle = {
-			x: 10 + 100,
-			y: 10,
-			width: window.innerWidth-20-100,
-			height: window.innerHeight-20
-		};
-	}
-	setRectangle();
+	var rectangle = {
+		x: 0,
+		y: 0,
+		width: window.innerWidth,
+		height: window.innerHeight
+	};
+
 	rectangle.totalCells = cellsPerPage;
 	var grid = new GridView({
 		renderer: view.renderer,
-		canvas: view.canvas,
+		// canvas: view.canvas,
 		rectangle: rectangle,
 		gridSolverParams: {
 			preferredCellAspectRatio: 1,
@@ -61,69 +72,83 @@ var onReady = function() {
 	});
 
 
-	function setGridSize(x, y) {
-		setRectangle();
-		grid.setRectangle(rectangle);
-	};
-
-	setGridSize();
-
-	testScene.bindRenderer(view.renderer);
-	view.renderManager.onEnterFrame.add(testScene.onEnterFrame);
-	// view.skipRender = true;
 
 	var pointerPosition = {x:200, y:200};
 	var pointers = new UnifiedPointers(view.canvas);
-	pointers.onPointerHoverSignal.add(function(x, y, id) {
+	var lastX = 0;
+	var dragging;
+	pointers.onPointerMoveSignal.add(function(x, y) {
 		pointerPosition.x = x;
 		pointerPosition.y = y;
 	});
-
 	pointers.onPointerDownSignal.add(function(x, y) {
-		this.dragStartY = y;
-		this.startScrollY = grid.gridLayout.scrollY;
-		speedHistory = [];
+		dragging = renderRegionRight.contains(x, y);
+		if(dragging) scrollPhysics.start(x);
+		lastX = x;
 	});
-
-	var residualScroll = 0;
-	var residualScrollEase = .9;
 	pointers.onPointerUpSignal.add(function(x, y) {
-		if(speedHistory.length > 2) {
-			var averageSpeed = 0;
-			speedHistory.forEach(function(speed) {
-				averageSpeed += speed;
-			})
-			averageSpeed /= speedHistory.length;
-			residualScroll = averageSpeed;
-		}
+		if(dragging) scrollPhysics.end(x);
+		dragging = false;
+		lastX = x;
 	});
-
-	var speedHistory = [];
-	var speedHistoryLength = 4;
-	function updateSpeedHistory(speed) {
-		speedHistory.push(speed);
-		if(speedHistory.length > 4) speedHistory.splice(0, 1);
-	}
 	pointers.onPointerDragSignal.add(function(x, y) {
-		console.log(x, y);
-		var lastScrollY = grid.gridLayout.scrollY;
-		grid.gridLayout.scrollY = Math.min(Math.max(0, -y + this.dragStartY + this.startScrollY), grid.gridLayout.scrollYMax);
-		updateSpeedHistory(grid.gridLayout.scrollY - lastScrollY);
+		if(dragging) scrollPhysics.move(x);
+		lastX = x;
 	});
 
-	view.renderManager.onEnterFrame.add(grid.onEnterFrame);
+	var scrollPhysics = new ScrollPhysics({
+		totalCells: Math.ceil(totalViews / grid.gridLayout.rows),
+		cellSize: grid.gridLayout.cellWidth,
+		viewSize: window.innerWidth,
+		gutterSize: 100,
+		dipToClosestCell: true
+	});
+
 	view.renderManager.onEnterFrame.add(function(){
-		var intersection = grid.getCellUnderPosition(pointerPosition.x, pointerPosition.y);
+		scrollPhysics.update();
+		grid.gridLayout.scrollX = scrollPhysics.value;
+		grid.onEnterFrame();
+		var intersection = grid.getCellUnderPosition(pointerPosition.x-offsetGridX, pointerPosition.y);
 		if(intersection) {
 			intersection.cell.needsRender = true;
 		}
-		grid.gridLayout.scrollY = Math.min(Math.max(0, grid.gridLayout.scrollY + residualScroll), grid.gridLayout.scrollYMax);
-		residualScroll *= residualScrollEase;
-		// grid.gridLayout.scrollY = (Math.min(1, Math.max(0, Math.sin((new Date()).getTime() * 0.0001) * .6 + .5))) * grid.gridLayout.scrollYMax;
+		// grid.gridLayout.scrollX = Math.min(Math.max(0, grid.gridLayout.scrollX + residualScroll), grid.gridLayout.scrollXMax);
+		// residualScroll *= residualScrollEase;
+		// grid.gridLayout.scrollX = (Math.min(1, Math.max(0, Math.sin((new Date()).getTime() * 0.0001) * .6 + .5))) * grid.gridLayout.scrollXMax;
 	});
-	view.renderManager.onExitFrame.add(grid.render);
-	Resize.onResize.add(setGridSize);
+	view.renderManager.onEnterFrame.add(function() {
+		renderRegionLeft.apply(view.renderer);
+	});
+	view.renderManager.onExitFrame.add(function() {
+		renderRegionRight.apply(view.renderer);
+		grid.render();
+	});
 	view.renderManager.skipFrames = 0;
+
+
+	function onResize(w, h) {
+		offsetGridX = w * .5;
+		renderRegionLeft.setFullSizeAndRegion(w, h, 0, 0, w*.5, h);
+		renderRegionRight.setFullSizeAndRegion(w, h, w*.5, 0, w*.5, h);
+	}
+	renderRegionRight.onChangeSignal.add(function(x, y, w, h) {
+		view.camera.aspect = w/h;
+		view.camera.updateProjectionMatrix();
+	})
+
+	renderRegionRight.onChangeSignal.add(function(x, y, w, h) {
+		rectangle.width = w;
+		rectangle.height = h;
+		grid.setRectangle(rectangle);
+		scrollPhysics.viewSize = w;
+		scrollPhysics.cellSize = grid.gridLayout.cellWidth;
+		scrollPhysics.totalCells = Math.ceil(totalViews / grid.gridLayout.rows);
+		scrollPhysics.updateSize();
+	});
+
+	Resize.onResize.add(onResize);
+	onResize(window.innerWidth, window.innerHeight);
+
 }
 
 var loadAndRunScripts = require('loadandrunscripts');

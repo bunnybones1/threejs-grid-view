@@ -1,6 +1,6 @@
 var CameraDisplayObject3D = require('threejs-camera-display-object3d');
 var setPlaneToOrthographicRectangle = require('threejs-helper-set-plane-to-orthographic-rectangle');
-var gridCellPositioner = require('./grid-cell-positioners').verticalScroll;
+var gridCellPositioner = require('./grid-cell-positioners/horizontalScroll');
 var GridLayoutSolver = require('grid-layout-solver');
 var _ = require('lodash');
 var nameID = 0;
@@ -18,12 +18,13 @@ function GridView(params) {
 			y: 100
 		},
 		useDevicePixelRatio: true,
-		renderRegion: true,
 		scrollX: 0,
 		scrollY: 0,
 		autoClear: undefined,
 		totalCells: 0,
-		gridCellPositioner: gridCellPositioner
+		debugLevel: 0,
+		gridCellPositioner: gridCellPositioner,
+		autoClear: false
 	}, params || {});
 	_.assign(this, params);
 	this.camera = new THREE.OrthographicCamera(0, 1, 0, 1, -100, 100);
@@ -77,7 +78,7 @@ GridView.prototype = {
 				}
 			}
 		})
-		console.log('cellsUpdatedThisFrame', cellsUpdatedThisFrame);
+		if(this.debugLevel > 0)console.log('cellsUpdatedThisFrame', cellsUpdatedThisFrame);
 	},
 	render: function() {
 		this.renderCellTextures();
@@ -85,31 +86,7 @@ GridView.prototype = {
 			this.backupAutoClear = this.renderer.autoClear;
 			this.renderer.autoClear = this.autoClear;
 		}
-		if(this.renderRegion) {
-			var w = ~~(this.canvas.width / this.renderer.devicePixelRatio);
-			var h = ~~(this.canvas.height / this.renderer.devicePixelRatio);
-			// console.log(w, h);
-			var inverseY = h-this.gridLayout.y-this.gridLayout.height;
-			this.renderer.setScissor(
-				this.gridLayout.x,
-				inverseY,
-				this.gridLayout.width,
-				this.gridLayout.height
-			);
-			this.renderer.setViewport(
-				this.gridLayout.x, 
-				inverseY,
-				this.gridLayout.width, 
-				this.gridLayout.height
-			);
-			this.renderer.enableScissorTest(true);
-			this.renderer.render(this.scene, this.camera);
-			this.renderer.setViewport(0, 0, w, h);
-			this.renderer.setScissor(0, 0, w, h);
-			this.renderer.enableScissorTest(false);
-		} else {
-			this.renderer.render(this.scene, this.camera);
-		}
+		this.renderer.render(this.scene, this.camera);
 		if(this.autoClear !== undefined) {
 			this.renderer.autoClear = this.backupAutoClear;
 		}

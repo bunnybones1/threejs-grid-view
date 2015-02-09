@@ -25,6 +25,6 @@
   "dependencies": {
   },
   "devDependencies": {
-    "three.js": "*"
+    "three.js": "0.69.0"
   }
 }
