@@ -72,9 +72,9 @@ GridView.prototype = {
 			if(index >= 0 && index < totalCells) {
 				var cell = cells[index];
 				if(cell.needsRender || cell.alwaysRender) {
+					cell.needsRender = false;
 					cell.render();
 					cellsUpdatedThisFrame++;
-					cell.needsRender = false;
 				}
 			}
 		})
@@ -93,7 +93,7 @@ GridView.prototype = {
 	},
 	createCell: function(cellProps) {
 		if(!cellProps.camera) throw new Error("Please provide a camera");
-		cellProps = _.merge({
+		_.extend(cellProps, {
 			x: 0,
 			y: 0,
 			width: 100,
@@ -101,7 +101,7 @@ GridView.prototype = {
 			resolutionWidth: 100,
 			resolutionHeight: 100,
 			renderer: this.renderer
-		}, cellProps);
+		});
 
 		if(this.useDevicePixelRatio) {
 			cellProps.resolutionWidth *= this.renderer.devicePixelRatio,
@@ -113,7 +113,6 @@ GridView.prototype = {
 		this.cells.push(cellProps);
 		this.layoutCell(this.totalCells);
 		this.totalCells++;
-		this.updateScrollBounds();
 		this.scene.add(cellProps.object3D);
 	},
 	layoutCells: function() {
@@ -140,16 +139,8 @@ GridView.prototype = {
 		this.gridLayout.bottom = this.gridLayout.y + this.gridLayout.height;
 		this.gridLayout.cellWidth = this.gridLayout.width / this.gridLayout.cols;
 		this.gridLayout.cellHeight = this.gridLayout.height / this.gridLayout.rows;
-		this.updateScrollBounds();
-		
 		this.updateCameraBounds();
-		this.camera.updateProjectionMatrix();
 		this.layoutCells();
-	},
-	updateScrollBounds: function() {
-		var totalRows = Math.ceil(this.totalCells / this.gridLayout.cols);
-		var rowsToScroll = Math.max(0, totalRows - this.gridLayout.rows);
-		this.gridLayout.scrollYMax = rowsToScroll * this.gridLayout.cellHeight;
 	}
 }
 module.exports = GridView;
