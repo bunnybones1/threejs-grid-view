@@ -1,146 +1,245 @@
 var CameraDisplayObject3D = require('threejs-camera-display-object3d');
 var setPlaneToOrthographicRectangle = require('threejs-helper-set-plane-to-orthographic-rectangle');
-var gridCellPositioner = require('./grid-cell-positioners/horizontalScroll');
+var gridCellPositionerX = require('./cellPositioners/horizontalScroll');
+var gridCellPositionerY = require('./cellPositioners/verticalScroll');
 var GridLayoutSolver = require('grid-layout-solver');
-var _ = require('lodash');
+var cellDecoratorCctv = require('./cellDecorators/cctv');
+var Signal = require('signals').Signal;
 var nameID = 0;
+
 function generateName(baseName) {
 	nameID++;
 	return baseName + nameID;
 }
 
 function GridView(params) {
-	params = _.merge({
-		rectangle: {
-			width: window.innerWidth-200,
-			height: window.innerHeight-200,
-			x: 100,
-			y: 100
-		},
-		useDevicePixelRatio: true,
-		scrollX: 0,
-		scrollY: 0,
-		autoClear: undefined,
-		totalCells: 0,
-		debugLevel: 0,
-		gridCellPositioner: gridCellPositioner,
-		autoClear: false
-	}, params || {});
-	_.assign(this, params);
-	this.camera = new THREE.OrthographicCamera(0, 1, 0, 1, -100, 100);
-	this.scene = new THREE.Scene();
-	this.cells = [];
-
-
-	this.gridLayout = new GridLayoutSolver(params.gridLayoutSolverParams);
-	//extra grid properties
-	this.gridLayout.scrollX = 0;
-	this.gridLayout.scrollY = 0;
-
-	//bind the following functions to this because they might be called from other scopes 
 	var _this = this;
-	['render', 'setRectangle', 'onEnterFrame'].forEach(function(funcName) {
-		_this[funcName] = _this[funcName].bind(_this);
-	});
-	this.setRectangle(this.rectangle);
-}
+	var _rectangle = params.rectangle || {
+		width: window.innerWidth-200,
+		height: window.innerHeight-200,
+		x: 100,
+		y: 100
+	};
 
-GridView.prototype = {
-	onEnterFrame: function() {
-		this.updateCameraBounds();
-	},
-	updateCameraBounds: function() {
-		this.camera.left = this.gridLayout.x + this.gridLayout.scrollX;
-		this.camera.right = this.gridLayout.x + this.gridLayout.width + this.gridLayout.scrollX;
-		this.camera.top = this.gridLayout.y + this.gridLayout.scrollY;
-		this.camera.bottom = this.gridLayout.y + this.gridLayout.height + this.gridLayout.scrollY;
-		this.camera.updateProjectionMatrix();
-	},
-	getCellUnderPosition: function(x, y) {
-		var intersection = gridCellPositioner.getCellIntersectionUnderPosition(this.gridLayout, x, y);
-		if(intersection && intersection.index != -1 && intersection.index < this.totalCells) {
-			intersection.cell = this.cells[intersection.index];
+	var _useDevicePixelRatio = params.useDevicePixelRatio || true;
+	var _scrollX = params.scrollX || 0;
+	var _scrollY = params.scrollY || 0;
+	var _totalCells = params.totalCells || 0;
+	var _debugLevel = params.debugLevel || 0;
+	var _scrollAxis = params.scrollAxis || 'y';
+	var _autoClear = params.autoClear || false;
+	var _camera = new THREE.OrthographicCamera(0, 1, 0, 1, -100, 100);
+	var _scene = new THREE.Scene();
+	var _renderer = params.renderer;
+	var _cells = [];
+	var CellClass = params.CellClass ? params.CellClass : CameraDisplayObject3D;
+
+	var onCellResetSignal = new Signal();
+
+	switch(_scrollAxis) {
+		case 'x': 
+			_gridCellPositioner = gridCellPositionerX;
+			break;
+		default: 
+			_gridCellPositioner = gridCellPositionerY;
+	}
+
+	var _actualCellPoolSize = 0;
+	var _cellPoolSize = 0;
+
+	var _gridLayout = new GridLayoutSolver(params.gridSolverParams);
+	var _gridSolution;
+	//extra grid properties
+	_gridLayout.scrollX = 0;
+	_gridLayout.scrollY = 0;
+
+	_setRectangle(_rectangle);
+
+	function _onEnterFrame() {
+		_updateCameraBounds();
+	}
+
+	function _updateCameraBounds() {
+		_camera.left = _rectangle.x + _gridLayout.scrollX;
+		_camera.right = _rectangle.x + _rectangle.width + _gridLayout.scrollX;
+		_camera.top = _rectangle.y + _rectangle.height - _gridLayout.scrollY;
+		_camera.bottom = _rectangle.y - _gridLayout.scrollY;
+		_camera.updateProjectionMatrix();
+	}
+
+	function _getCellUnderPosition(x, y) {
+		var intersection = _gridCellPositioner.getCellIntersectionUnderPosition(_gridLayout, _rectangle, _gridSolution, x, y);
+		if(intersection && intersection.index != -1 && intersection.index < _totalCells) {
+			intersection.cell = _cells[intersection.index % _cellPoolSize];
 			return intersection;
 		}
-	},
-	renderCellTextures: function() {
-		var visibleCellIndices = this.gridCellPositioner.getVisibleIndices(this.gridLayout);
-		var cells = this.cells;
-		var totalCells = this.totalCells;
-		var cellsUpdatedThisFrame = 0;
-		visibleCellIndices.forEach(function(index){
-			if(index >= 0 && index < totalCells) {
-				var cell = cells[index];
-				if(cell.needsRender || cell.alwaysRender) {
-					cell.needsRender = false;
-					cell.render();
-					cellsUpdatedThisFrame++;
-				}
+	}
+
+	function _updateCells() {
+		var visibleCellIndices = _gridCellPositioner.getVisibleIndices(_gridLayout, _rectangle, _gridSolution);
+		return visibleCellIndices.map(function(index){
+			if(index >= 0 && index < _totalCells) {
+				var cell = _cells[index % _cellPoolSize];
+				if(cell.index !== index) _changeCellData(cell, index);
+				if(cell.update) cell.update();
 			}
-		})
-		if(this.debugLevel > 0)console.log('cellsUpdatedThisFrame', cellsUpdatedThisFrame);
-	},
-	render: function() {
-		this.renderCellTextures();
-		if(this.autoClear !== undefined) {
-			this.backupAutoClear = this.renderer.autoClear;
-			this.renderer.autoClear = this.autoClear;
+		});
+	}
+
+	function _getVisibleCells() {
+		var visibleCellIndices = _gridCellPositioner.getVisibleIndices(_gridLayout, _rectangle, _gridSolution);
+		return visibleCellIndices.map(function(index){
+			if(index >= 0 && index < _totalCells) {
+				return _cells[index % _cellPoolSize];
+			}
+		}).filter(function(cell) {
+			return !!cell;
+		});
+	}
+
+	function _render() {
+		_updateCells();
+		if(_autoClear !== undefined) {
+			_backupAutoClear = _renderer.autoClear;
+			_renderer.autoClear = _autoClear;
 		}
-		this.renderer.render(this.scene, this.camera);
-		if(this.autoClear !== undefined) {
-			this.renderer.autoClear = this.backupAutoClear;
+		_renderer.render(_scene, _camera);
+		if(_autoClear !== undefined) {
+			_renderer.autoClear = _backupAutoClear;
 		}
-	},
-	createCell: function(cellProps) {
-		if(!cellProps.camera) throw new Error("Please provide a camera");
-		_.extend(cellProps, {
+	}
+
+	function _createCell() {
+		var cell = {
 			x: 0,
 			y: 0,
-			width: 100,
-			height: 100,
-			resolutionWidth: 100,
-			resolutionHeight: 100,
-			renderer: this.renderer
-		});
+			width: _gridSolution.cellWidth,
+			height: _gridSolution.cellHeight,
+			resolutionWidth: ~~_gridSolution.cellWidth,
+			resolutionHeight: ~~_gridSolution.cellHeight,
+			renderer: _renderer,
+			fresh: true
+		};
 
-		if(this.useDevicePixelRatio) {
-			cellProps.resolutionWidth *= this.renderer.devicePixelRatio,
-			cellProps.resolutionHeight *= this.renderer.devicePixelRatio
+		if(_useDevicePixelRatio) {
+			cell.resolutionWidth *= _renderer.devicePixelRatio,
+			cell.resolutionHeight *= _renderer.devicePixelRatio
 		}
-		if(!cellProps.name) cellProps.name = generateName('cell');
-		cellProps.object3D = new CameraDisplayObject3D(cellProps);
-		cellProps.render = cellProps.object3D.render;
-		this.cells.push(cellProps);
-		this.layoutCell(this.totalCells);
-		this.totalCells++;
-		this.scene.add(cellProps.object3D);
-	},
-	layoutCells: function() {
-		for (var i = this.totalCells - 1; i >= 0; i--) {
-			this.layoutCell(i);
-		}
-	},
-	layoutCell: function(index) {
-		var cell = this.cells[index];
-		var cellRectangle = this.gridCellPositioner.getCellRectangleOfIndex(this.gridLayout, index);
-		cellRectangle.x += this.gridLayout.x;
-		cellRectangle.y += this.gridLayout.y;
-		// console.log(cellRectangle);
-		setPlaneToOrthographicRectangle(cell.object3D, cellRectangle);
-		cell.object3D.setSize(cellRectangle.width, cellRectangle.height);
-		cell.object3D.setResolution(cellRectangle.width * this.renderer.devicePixelRatio, cellRectangle.height * this.renderer.devicePixelRatio);
-		cell.object3D.scale.y *= -1;
-		cell.needsRender = true;
-	},
-	setRectangle: function(rectangle) {
-		this.gridLayout.solve(rectangle);
-		//extra precalculations for speed
-		this.gridLayout.right = this.gridLayout.x + this.gridLayout.width;
-		this.gridLayout.bottom = this.gridLayout.y + this.gridLayout.height;
-		this.gridLayout.cellWidth = this.gridLayout.width / this.gridLayout.cols;
-		this.gridLayout.cellHeight = this.gridLayout.height / this.gridLayout.rows;
-		this.updateCameraBounds();
-		this.layoutCells();
+		if(!cell.name) cell.name = generateName('cell');
+		cell.object3D = new CellClass(cell);
+		cell.render = cell.object3D.render;
+		if(_debugLevel >= 1) console.log('create', cell.name);
+		_cells.push(cell);
+		_scene.add(cell.object3D);
 	}
+
+	function _destroyCell() {
+		var cell = _cells.pop();
+		if(_debugLevel >= 1) console.log('destroy', cell.name)
+		_scene.remove(cell.object3D);
+		cell.object3D.destroy();
+	}
+
+	function _layoutCells() {
+		_cells.forEach(function(cell) {
+			cell.needsUpdate = true;
+			_layoutCell(cell, cell.index);
+		});
+	}
+
+	function _layoutCell(cell, index) {
+		var cellRectangle = _gridCellPositioner.getCellRectangleOfIndex(_gridSolution, index);
+		cellRectangle.x += _rectangle.x;
+		cellRectangle.y = _rectangle.height - cellRectangle.y - cellRectangle.height + _rectangle.y;
+		if(_debugLevel >= 1) console.log('layout', cell.name, index);
+		setPlaneToOrthographicRectangle(cell.object3D, cellRectangle);
+		cell.width = cellRectangle.width;
+		cell.height = cellRectangle.height;
+		cell.object3D.setSize(cellRectangle.width, cellRectangle.height);
+		cell.object3D.setResolution(cellRectangle.width * _renderer.devicePixelRatio, cellRectangle.height * _renderer.devicePixelRatio);
+		cell.object3D.visible = index < _totalCells;
+		if(cell.reset) cell.reset();
+	}
+
+	function _changeCellData(cell, index) {
+		var data = _data[index];
+		cell.index = index;
+
+		//set/change cell behaviour
+		if(data.cellDecorator !== cell.initdCellDecorator) {
+			data.cellDecorator(cell);
+			cell.initdCellDecorator = data.cellDecorator;
+		}
+
+		cell.setData(data);
+
+		if(_debugLevel >= 1) console.log('change', cell.name, index);
+
+		_layoutCell(cell, index);
+		cell.needsUpdate = true;
+		onCellResetSignal.dispatch(cell);
+		delete cell.fresh;
+	}
+
+	function _setRectangle(rectangle) {
+		_rectangle = rectangle;
+		_solveGrid();
+		//extra precalculations for speed
+		_updateCameraBounds();
+	}
+
+	function _updateCellPool() {
+		_cellPoolSize = _gridCellPositioner.getPoolSize(_gridSolution);
+		_cellPoolSize = Math.min(_cellPoolSize, _totalCells);
+		if(_actualCellPoolSize !== _cellPoolSize) {
+			while(_actualCellPoolSize < _cellPoolSize) {
+				_createCell();
+				_actualCellPoolSize++;
+			}
+			while(_actualCellPoolSize > _cellPoolSize) {
+				_destroyCell();
+				_actualCellPoolSize--;
+			}
+		}
+	}
+
+	function _setData(data){
+		_data = data;
+		_totalCells = data.length;
+		_updateCellPool();
+		_cells.forEach(function(cell) {
+			cell.index = -1;
+			cell.needsUpdate = true;
+		});
+	}
+
+	function _solveGrid() {
+		var index = _gridSolution ? _gridCellPositioner.getIndexOfScroll(_gridSolution, _gridLayout.scrollY) : undefined;
+		_gridSolution = _gridLayout.solve(_rectangle);
+		if(index) _gridCellPositioner.setScrollFromIndex(_gridLayout, _gridSolution, index);
+		_rectangle.right = _rectangle.x + _rectangle.width;
+		_rectangle.bottom = _rectangle.y + _rectangle.height;
+		_updateCellPool();
+		_layoutCells();
+		_this.gridSolution = _gridSolution;
+	}
+
+	function _setPreferredCellCount(val) {
+		_gridLayout.setPreferredCellCount(val);
+		_solveGrid();
+	}
+
+
+	this.setData = _setData;
+	this.gridLayout = _gridLayout;
+	this.setRectangle = _setRectangle;
+	this.onEnterFrame = _onEnterFrame;
+	this.getCellUnderPosition = _getCellUnderPosition;
+	this.getVisibleCells = _getVisibleCells;
+	this.render = _render;
+	this.setPreferredCellCount = _setPreferredCellCount;
+	this.cells = _cells;
+	this.onCellResetSignal = onCellResetSignal;
 }
+
 module.exports = GridView;

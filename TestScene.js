@@ -12,6 +12,10 @@ function TestScene() {
 	this.camera.lookAt(new THREE.Vector3(0, 1, 0));
 	this.dolly.add(this.camera);
 
+	//skip frames
+	this.skipFramesCounter = 0;
+	this.skipFrames = 0;
+
 	//lights
 	var light = new THREE.PointLight(0xffffff, .5);
 	light.position.x = 5;
@@ -84,11 +88,16 @@ TestScene.prototype = {
 		this.renderer = renderer;
 	},
 	onEnterFrame: function() {
-		this.dolly.rotation.y += .005;
-		this.lightMesh.position.y = 10 * Math.sin((new Date()).getTime() * .001) + 11;
-		for (var i = this.lightProbes.length - 1; i >= 0; i--) {
-			this.lightProbes[i].update(this.renderer, this.scene);
-		};
+		if(this.skipFramesCounter > 0) {
+			this.skipFramesCounter--;
+		} else {
+			this.skipFramesCounter = this.skipFrames;
+			this.dolly.rotation.y += .005;
+			this.lightMesh.position.y = 10 * Math.sin((new Date()).getTime() * .001) + 11;
+			for (var i = this.lightProbes.length - 1; i >= 0; i--) {
+				this.lightProbes[i].update(this.renderer, this.scene);
+			};
+		}
 	}
 }
 
