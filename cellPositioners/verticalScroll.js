@@ -9,8 +9,8 @@ var verticalScroll = {
 	},
 	getVisibleIndices: function(gridLayout, gridRectangle, gridSolution) {
 		var indices = [];
-		var firstRow = ~~(gridLayout.scrollY / gridRectangle.height * gridSolution.rows);
-		var lastRow = Math.ceil((gridLayout.scrollY+gridRectangle.height) / gridRectangle.height * gridSolution.rows) - 1;
+		var firstRow = ~~(gridLayout.scrollY / gridSolution.innerHeight * gridSolution.rows);
+		var lastRow = Math.ceil((gridLayout.scrollY+gridRectangle.height) / gridSolution.innerHeight * gridSolution.rows) - 1;
 		for (var iRow = firstRow; iRow <= lastRow; iRow++) {
 			for (var iCol = 0; iCol < gridSolution.cols; iCol++) {
 				indices.push(iCol + iRow * gridSolution.cols);
@@ -20,8 +20,8 @@ var verticalScroll = {
 	},
 	getCellIntersectionUnderPosition: function(gridLayout, gridRectangle, gridSolution, x, y) {
 		if(x > gridRectangle.x && y > gridRectangle.y && x < gridRectangle.right && y < gridRectangle.bottom) {
-			var relX = (x - gridRectangle.x + gridLayout.scrollX) / gridRectangle.width * gridSolution.cols;
-			var relY = (y - gridRectangle.y + gridLayout.scrollY) / gridRectangle.height * gridSolution.rows;
+			var relX = (x - gridRectangle.x + gridLayout.scrollX) / gridSolution.innerWidth * gridSolution.cols;
+			var relY = (y - gridRectangle.y + gridLayout.scrollY) / gridSolution.innerHeight * gridSolution.rows;
 			var index = ~~relX + (~~relY) * gridSolution.cols;
 			return {
 				x: relX % 1,

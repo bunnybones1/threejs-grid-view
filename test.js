@@ -72,17 +72,20 @@ var onReady = function() {
 		height: window.innerHeight
 	};
 
-	var scrollAxis = 'x';
+	var scrollAxis = 'y';
+
+	var gridSolverParams = {
+		preferredCellAspectRatio: 1,
+		scoreWeightFill: 10
+	}
+	gridSolverParams['margin'+scrollAxis.toUpperCase()] = 0.25;
 
 	var grid = new GridView({
 		renderer: view.renderer,
 		// canvas: view.canvas,
 		rectangle: rectangle,
 		scrollAxis: scrollAxis,
-		gridSolverParams: {
-			preferredCellAspectRatio: 1,
-			scoreWeightFill: 10
-		}
+		gridSolverParams: gridSolverParams
 	});
 
 	var cellsData1 = [];
