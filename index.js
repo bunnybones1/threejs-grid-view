@@ -27,6 +27,7 @@ function GridView(params) {
 	var _totalCells = params.totalCells || 0;
 	var _debugLevel = params.debugLevel || 0;
 	var _scrollAxis = params.scrollAxis || 'y';
+	var _margin = params.margin || 0;
 	var _autoClear = params.autoClear || false;
 	var _camera = new THREE.OrthographicCamera(0, 1, 0, 1, -100, 100);
 	var _scene = new THREE.Scene();
@@ -35,6 +36,11 @@ function GridView(params) {
 	var CellClass = params.CellClass ? params.CellClass : CameraDisplayObject3D;
 
 	var onCellResetSignal = new Signal();
+
+	var _marginX = 0;
+	var _marginY = 0;
+	var _scrollXScale = 0;
+	var _scrollYScale = 0;
 
 	switch(_scrollAxis) {
 		case 'x': 
@@ -46,6 +52,7 @@ function GridView(params) {
 
 	var _actualCellPoolSize = 0;
 	var _cellPoolSize = 0;
+
 
 	var _gridLayout = new GridLayoutSolver(params.gridSolverParams);
 	var _gridSolution;
@@ -60,8 +67,8 @@ function GridView(params) {
 	}
 
 	function _updateCameraBounds() {
-		_camera.left = _rectangle.x + _gridLayout.scrollX;
-		_camera.right = _rectangle.x + _rectangle.width + _gridLayout.scrollX;
+		_camera.left = _rectangle.x + _gridLayout.scrollX * _scrollXScale;
+		_camera.right = _rectangle.x + _rectangle.width + _gridLayout.scrollX * _scrollYScale;
 		_camera.top = _rectangle.y + _rectangle.height - _gridLayout.scrollY;
 		_camera.bottom = _rectangle.y - _gridLayout.scrollY;
 		_camera.updateProjectionMatrix();
@@ -213,9 +220,40 @@ function GridView(params) {
 		});
 	}
 
+	function _determineGridMargins() {
+		_marginX = 0;
+		_marginY = 0;
+		if(_totalCells > _gridSolution.cellCount) {
+			if(_scrollAxis === 'x') {
+				_marginX = 0.25;
+			} else {
+				_marginY = 0.25;
+			}
+		}
+
+		var paddedWidth = _rectangle.width + _gridSolution.cellWidth * _marginX;
+		var ratioWidth = _rectangle.width / paddedWidth;
+		_gridSolution.cellWidth *= ratioWidth;
+		_gridSolution.innerWidth = _rectangle.width * ratioWidth;
+		_gridSolution.marginWidth = _rectangle.width - _gridSolution.innerWidth;
+
+		var paddedHeight = _rectangle.height + _gridSolution.cellHeight * _marginY;
+		var ratioHeight = _rectangle.height / paddedHeight;
+		_gridSolution.cellHeight *= ratioHeight;
+		_gridSolution.innerHeight = _rectangle.height * ratioHeight;
+		_gridSolution.marginHeight = _rectangle.height - _gridSolution.innerHeight;
+
+	}
+
+	function _determineScrolling() {
+		_scrollXScale = _scrollYScale = _totalCells > _gridSolution.cellCount ? 1 : 0;
+	}
+
 	function _solveGrid() {
 		var index = _gridSolution ? _gridCellPositioner.getIndexOfScroll(_gridSolution, _gridLayout.scrollY) : undefined;
 		_gridSolution = _gridLayout.solve(_rectangle);
+		_determineGridMargins();
+		_determineScrolling();
 		if(index) _gridCellPositioner.setScrollFromIndex(_gridLayout, _gridSolution, index);
 		_rectangle.right = _rectangle.x + _rectangle.width;
 		_rectangle.bottom = _rectangle.y + _rectangle.height;

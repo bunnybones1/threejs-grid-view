@@ -72,19 +72,19 @@ var onReady = function() {
 		height: window.innerHeight
 	};
 
-	var scrollAxis = 'y';
+	var scrollAxis = 'x';
 
 	var gridSolverParams = {
 		preferredCellAspectRatio: 1,
 		scoreWeightFill: 10
 	}
-	gridSolverParams['margin'+scrollAxis.toUpperCase()] = 0.25;
 
 	var grid = new GridView({
 		renderer: view.renderer,
 		// canvas: view.canvas,
 		rectangle: rectangle,
 		scrollAxis: scrollAxis,
+		margin: 0.25,
 		gridSolverParams: gridSolverParams
 	});
 
