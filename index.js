@@ -267,6 +267,9 @@ function GridView(params) {
 		_solveGrid();
 	}
 
+	function _getScene() {
+		return _scene;
+	}
 
 	this.setData = _setData;
 	this.gridLayout = _gridLayout;
@@ -278,6 +281,7 @@ function GridView(params) {
 	this.setPreferredCellCount = _setPreferredCellCount;
 	this.cells = _cells;
 	this.onCellResetSignal = onCellResetSignal;
+	this.getScene = _getScene;
 }
 
 module.exports = GridView;
