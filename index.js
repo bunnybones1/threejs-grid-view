@@ -27,6 +27,7 @@ function GridView(params) {
 	var _totalCells = params.totalCells || 0;
 	var _debugLevel = params.debugLevel || 0;
 	var _scrollAxis = params.scrollAxis || 'y';
+	var _scrollAxisCapitalized = _scrollAxis.toUpperCase();
 	var _margin = params.margin || 0;
 	var _autoClear = params.autoClear || false;
 	var _camera = new THREE.OrthographicCamera(0, 1, 0, 1, -100, 100);
@@ -250,11 +251,11 @@ function GridView(params) {
 	}
 
 	function _solveGrid() {
-		var index = _gridSolution ? _gridCellPositioner.getIndexOfScroll(_gridSolution, _gridLayout.scrollY) : undefined;
+		var index = _gridSolution ? _gridCellPositioner.getIndexOfScroll(_gridSolution, _gridLayout['scroll' + _scrollAxisCapitalized]) : undefined;
 		_gridSolution = _gridLayout.solve(_rectangle);
 		_determineGridMargins();
 		_determineScrolling();
-		if(index) _gridCellPositioner.setScrollFromIndex(_gridLayout, _gridSolution, index);
+		if(index !== undefined) _gridCellPositioner.setScrollFromIndex(_gridLayout, _gridSolution, index);
 		_rectangle.right = _rectangle.x + _rectangle.width;
 		_rectangle.bottom = _rectangle.y + _rectangle.height;
 		_updateCellPool();
