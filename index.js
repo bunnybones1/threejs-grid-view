@@ -107,14 +107,7 @@ function GridView(params) {
 
 	function _render() {
 		_updateCells();
-		if(_autoClear !== undefined) {
-			_backupAutoClear = _renderer.autoClear;
-			_renderer.autoClear = _autoClear;
-		}
 		_renderer.render(_scene, _camera);
-		if(_autoClear !== undefined) {
-			_renderer.autoClear = _backupAutoClear;
-		}
 	}
 
 	function _createCell() {
@@ -272,6 +265,10 @@ function GridView(params) {
 		return _scene;
 	}
 
+	function _getCamera() {
+		return _camera;
+	}
+
 	this.setData = _setData;
 	this.gridLayout = _gridLayout;
 	this.setRectangle = _setRectangle;
@@ -282,7 +279,9 @@ function GridView(params) {
 	this.setPreferredCellCount = _setPreferredCellCount;
 	this.cells = _cells;
 	this.onCellResetSignal = onCellResetSignal;
+	this.updateCells = _updateCells;
 	this.getScene = _getScene;
+	this.getCamera = _getCamera;
 }
 
 module.exports = GridView;
