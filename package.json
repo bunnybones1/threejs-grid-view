@@ -1,6 +1,6 @@
 {
   "name": "threejs-grid-view",
-  "version": "4.1.1",
+  "version": "5.0.0",
   "description": "A multiview grid for threejs scenes.",
   "main": "index.js",
   "license": "MIT",
