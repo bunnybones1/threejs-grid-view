@@ -226,6 +226,7 @@ var onReady = function() {
 	view.renderManager.onExitFrame.add(function() {
 		renderRegionRight.apply(view.renderer);
 		grid.render();
+		console.log(grid.changed());
 	});
 	view.renderManager.skipFrames = 0;
 

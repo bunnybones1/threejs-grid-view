@@ -21,9 +21,13 @@ function GridView(params) {
 		y: 100
 	};
 
+	var _changed = true;
+
 	var _useDevicePixelRatio = params.useDevicePixelRatio || true;
 	var _scrollX = params.scrollX || 0;
 	var _scrollY = params.scrollY || 0;
+	var _lastScrollX = _scrollX;
+	var _lastScrollY = _scrollY;
 	var _totalCells = params.totalCells || 0;
 	var _debugLevel = params.debugLevel || 0;
 	var _scrollAxis = params.scrollAxis || 'y';
@@ -37,6 +41,8 @@ function GridView(params) {
 	var CellClass = params.CellClass ? params.CellClass : CameraDisplayObject3D;
 
 	var onCellResetSignal = new Signal();
+
+	var _scrollTolerance = 0.1;
 
 	var _marginX = 0;
 	var _marginY = 0;
@@ -73,7 +79,12 @@ function GridView(params) {
 		_camera.top = _rectangle.y + _rectangle.height - _gridLayout.scrollY;
 		_camera.bottom = _rectangle.y - _gridLayout.scrollY;
 		_camera.updateProjectionMatrix();
-	}
+		if(Math.abs(_lastScrollX - _gridLayout.scrollX) > _scrollTolerance || Math.abs(_lastScrollY !== _gridLayout.scrollY) > _scrollTolerance) {
+			_changed = true;
+		}
+		_lastScrollX = _gridLayout.scrollX;
+		_lastScrollY = _gridLayout.scrollY;
+	};
 
 	function _getCellUnderPosition(x, y) {
 		var intersection = _gridCellPositioner.getCellIntersectionUnderPosition(_gridLayout, _rectangle, _gridSolution, x, y);
@@ -128,7 +139,20 @@ function GridView(params) {
 		}
 		if(!cell.name) cell.name = generateName('cell');
 		cell.object3D = new CellClass(cell);
-		cell.render = cell.object3D.render;
+		var oldUpdate = cell.object3D.update.bind(cell.object3D);
+		function newUpdate() {
+			this._changed = true;
+			oldUpdate();
+		}
+		cell.object3D.update = newUpdate;
+		function changed() {
+			if(this._changed){
+				this._changed = false;
+				return true;
+			}
+			return false;
+		}
+		cell.object3D.changed = changed
 		if(_debugLevel >= 1) console.log('create', cell.name);
 		_cells.push(cell);
 		_scene.add(cell.object3D);
@@ -269,6 +293,18 @@ function GridView(params) {
 		return _camera;
 	}
 
+	function changed() {
+		var anythingChanged = false;
+		for (var i = _cells.length - 1; i >= 0; i--) {
+			anythingChanged = _cells[i].object3D.changed() || anythingChanged;
+		};
+		if(_changed) {
+			anythingChanged = true;
+			_changed = false;
+		}
+		return anythingChanged;
+	}
+
 	this.setData = _setData;
 	this.gridLayout = _gridLayout;
 	this.setRectangle = _setRectangle;
@@ -282,6 +318,7 @@ function GridView(params) {
 	this.updateCells = _updateCells;
 	this.getScene = _getScene;
 	this.getCamera = _getCamera;
+	this.changed = changed;
 }
 
 module.exports = GridView;
