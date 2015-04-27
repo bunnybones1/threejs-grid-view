@@ -7,6 +7,8 @@ var cellDecoratorCctv = require('./cellDecorators/cctv');
 var Signal = require('signals').Signal;
 var nameID = 0;
 
+function noop() {}
+
 function generateName(baseName) {
 	nameID++;
 	return baseName + nameID;
@@ -139,20 +141,20 @@ function GridView(params) {
 		}
 		if(!cell.name) cell.name = generateName('cell');
 		cell.object3D = new CellClass(cell);
+		if(!cell.object3D.changed) cell.object3D.changed = noop;
 		var oldUpdate = cell.object3D.update.bind(cell.object3D);
 		function newUpdate() {
 			this._changed = true;
 			oldUpdate();
 		}
-		cell.object3D.update = newUpdate;
+		cell.object3D.update = newUpdate.bind(cell);
 		function changed() {
-			if(this._changed){
-				this._changed = false;
-				return true;
-			}
-			return false;
+			var a = this.object3D.changed();
+			var b = this._changed;
+			this._changed = false;
+			return a || b;
 		}
-		cell.object3D.changed = changed
+		cell.changed = changed;
 		if(_debugLevel >= 1) console.log('create', cell.name);
 		_cells.push(cell);
 		_scene.add(cell.object3D);
