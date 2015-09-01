@@ -180,6 +180,8 @@ function GridView(params) {
 		cellRectangle.y = _rectangle.height - cellRectangle.y - cellRectangle.height + _rectangle.y;
 		if(_debugLevel >= 1) console.log('layout', cell.name, index);
 		setPlaneToOrthographicRectangle(cell.object3D, cellRectangle);
+		cell.x = cellRectangle.x;
+		cell.y = cellRectangle.y;
 		cell.width = cellRectangle.width;
 		cell.height = cellRectangle.height;
 		cell.object3D.setSize(cellRectangle.width, cellRectangle.height);
