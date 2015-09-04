@@ -289,6 +289,13 @@ function GridView(params) {
 		_solveGrid();
 	}
 
+	function getCellRectangleOfIndex(index) {
+		var rect = _gridCellPositioner.getCellRectangleOfIndex(_gridSolution, index);
+		rect.x += _rectangle.x;
+		rect.y = _rectangle.height - rect.y - rect.height + _rectangle.y;
+		return rect;
+	}
+
 	function _getScene() {
 		return _scene;
 	}
@@ -322,6 +329,7 @@ function GridView(params) {
 	this.updateCells = _updateCells;
 	this.getScene = _getScene;
 	this.getCamera = _getCamera;
+	this.getCellRectangleOfIndex = getCellRectangleOfIndex;
 	this.changed = changed;
 }
 
