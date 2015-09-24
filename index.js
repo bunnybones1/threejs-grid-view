@@ -35,6 +35,7 @@ function GridView(params) {
 	var _scrollAxis = params.scrollAxis || 'y';
 	var _scrollAxisCapitalized = _scrollAxis.toUpperCase();
 	var _margin = params.margin || 0;
+	var _lastPreferredCellCount = 0;
 	var _autoClear = params.autoClear || false;
 	var _camera = new THREE.OrthographicCamera(0, 1, 0, 1, -100, 100);
 	var _scene = new THREE.Scene();
@@ -180,6 +181,11 @@ function GridView(params) {
 		cellRectangle.y = _rectangle.height - cellRectangle.y - cellRectangle.height + _rectangle.y;
 		if(_debugLevel >= 1) console.log('layout', cell.name, index);
 		setPlaneToOrthographicRectangle(cell.object3D, cellRectangle);
+		if(cell.x === cellRectangle.x
+			&& cell.y === cellRectangle.y
+			&& cell.width === cellRectangle.width
+			&& cell.height === cellRectangle.height
+		) return;
 		cell.x = cellRectangle.x;
 		cell.y = cellRectangle.y;
 		cell.width = cellRectangle.width;
@@ -192,6 +198,7 @@ function GridView(params) {
 
 	function _changeCellData(cell, index) {
 		var data = _data[index];
+		if(cell.data === data) return;
 		cell.index = index;
 
 		//set/change cell behaviour
@@ -285,6 +292,8 @@ function GridView(params) {
 	}
 
 	function _setPreferredCellCount(val) {
+		if(_lastPreferredCellCount === val) return;
+		_lastPreferredCellCount = val;
 		_gridLayout.setPreferredCellCount(val);
 		_solveGrid();
 	}
