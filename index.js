@@ -145,7 +145,7 @@ function GridView(params) {
 		var oldUpdate = cell.object3D.update.bind(cell.object3D);
 		function newUpdate() {
 			this._changed = true;
-			oldUpdate();
+			oldUpdate.apply(this, arguments);
 		}
 		cell.object3D.update = newUpdate.bind(cell);
 		function changed() {
