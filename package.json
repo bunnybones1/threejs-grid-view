@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "grid-layout-solver": "^4.0.0",
+    "number-wrap": "^1.0.0",
     "signals": "^1.0.0",
     "threejs-camera-display-object3d": "^3.0.0",
     "threejs-helper-set-plane-to-orthographic-rectangle": "^1.0.0"

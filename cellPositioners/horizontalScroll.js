@@ -1,15 +1,17 @@
+var wrap = require('number-wrap');
+
 var horizontalScroll = {
 	getCellRectangleOfIndex: function (gridSolution, cellIndex) {
 		return {
-			x: ~~(cellIndex / gridSolution.rows) * gridSolution.cellWidth,
-			y: (cellIndex % gridSolution.rows) * gridSolution.cellHeight,
+			x: (~~((cellIndex / gridSolution.rows)+1)-1) * gridSolution.cellWidth,
+			y: wrap(cellIndex, 0, gridSolution.rows) * gridSolution.cellHeight,
 			width: gridSolution.cellWidth,
 			height: gridSolution.cellHeight
 		}
 	},
 	getVisibleIndices: function(gridLayout, gridRectangle, gridSolution) {
 		var indices = [];
-		var firstCol = ~~(gridLayout.scrollX / gridSolution.innerWidth * gridSolution.cols);
+		var firstCol = ~~((gridLayout.scrollX / gridSolution.innerWidth * gridSolution.cols) + 1) - 1;
 		var lastCol = Math.ceil((gridLayout.scrollX+gridRectangle.width) / gridSolution.innerWidth * gridSolution.cols) - 1;
 		for (var iCol = firstCol; iCol <= lastCol; iCol++) {
 			for (var iRow = 0; iRow < gridSolution.rows; iRow++) {

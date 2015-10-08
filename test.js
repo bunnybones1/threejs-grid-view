@@ -113,8 +113,6 @@ var onReady = function() {
 		}
 	});
 
-	grid.setData(cellsData1);
-
 	setTimeout(function() {
 		grid.setPreferredCellCount(cellsPerPage2);
 		grid.setData(cellsData2);
@@ -193,7 +191,6 @@ var onReady = function() {
 		}
 		if(target.updateSize) target.updateSize();
 	}
-	resizeScrollPhysics(scrollPhysicsParams, window.innerWidth * 5, window.height);
 
 	if(scrollAxis === 'x') {
 		updateScroll = updateScrollX;
@@ -250,6 +247,9 @@ var onReady = function() {
 
 	Resize.onResize.add(onResize);
 	onResize(window.innerWidth, window.innerHeight);
+
+	grid.setData(cellsData1);
+	resizeScrollPhysics(scrollPhysicsParams, window.innerWidth * 5, window.height);
 
 }
 

@@ -3,9 +3,10 @@ var setPlaneToOrthographicRectangle = require('threejs-helper-set-plane-to-ortho
 var gridCellPositionerX = require('./cellPositioners/horizontalScroll');
 var gridCellPositionerY = require('./cellPositioners/verticalScroll');
 var GridLayoutSolver = require('grid-layout-solver');
-var cellDecoratorCctv = require('./cellDecorators/cctv');
+var cellDecoratorBlank = require('./cellDecorators/blank');
 var Signal = require('signals').Signal;
 var nameID = 0;
+var wrap = require('number-wrap');
 
 function noop() {}
 
@@ -41,6 +42,10 @@ function GridView(params) {
 	var _scene = new THREE.Scene();
 	var _renderer = params.renderer;
 	var _cells = [];
+	var _data;
+	var _spaceFillerData = params.spaceFillerData || {
+		cellDecorator: cellDecoratorBlank
+	}
 	var CellClass = params.CellClass ? params.CellClass : CameraDisplayObject3D;
 
 	var onCellResetSignal = new Signal();
@@ -70,7 +75,7 @@ function GridView(params) {
 	_gridLayout.scrollX = 0;
 	_gridLayout.scrollY = 0;
 
-	_setRectangle(_rectangle);
+	// _setRectangle(_rectangle);
 
 	function _onEnterFrame() {
 		_updateCameraBounds();
@@ -91,8 +96,8 @@ function GridView(params) {
 
 	function _getCellUnderPosition(x, y) {
 		var intersection = _gridCellPositioner.getCellIntersectionUnderPosition(_gridLayout, _rectangle, _gridSolution, x, y);
-		if(intersection && intersection.index != -1 && intersection.index < _totalCells) {
-			intersection.cell = _cells[intersection.index % _cellPoolSize];
+		if(intersection && intersection.index >= 0 && intersection.index < _totalCells) {
+			intersection.cell = _cells[wrap(intersection.index, 0, _cellPoolSize)];
 			return intersection;
 		}
 	}
@@ -100,20 +105,16 @@ function GridView(params) {
 	function _updateCells() {
 		var visibleCellIndices = _gridCellPositioner.getVisibleIndices(_gridLayout, _rectangle, _gridSolution);
 		return visibleCellIndices.map(function(index){
-			if(index >= 0 && index < _totalCells) {
-				var cell = _cells[index % _cellPoolSize];
-				if(cell.index !== index) _changeCellData(cell, index);
-				if(cell.update) cell.update();
-			}
+			var cell = _cells[wrap(index, 0, _cellPoolSize)];
+			if(cell.index !== index) _changeCellData(cell, index);
+			if(cell.update) cell.update();
 		});
 	}
 
 	function _getVisibleCells() {
 		var visibleCellIndices = _gridCellPositioner.getVisibleIndices(_gridLayout, _rectangle, _gridSolution);
 		return visibleCellIndices.map(function(index){
-			if(index >= 0 && index < _totalCells) {
-				return _cells[index % _cellPoolSize];
-			}
+			return _cells[wrap(index, 0, _cellPoolSize)];
 		}).filter(function(cell) {
 			return !!cell;
 		});
@@ -192,13 +193,17 @@ function GridView(params) {
 		cell.height = cellRectangle.height;
 		cell.object3D.setSize(cellRectangle.width, cellRectangle.height);
 		cell.object3D.setResolution(cellRectangle.width * _renderer.devicePixelRatio, cellRectangle.height * _renderer.devicePixelRatio);
-		cell.object3D.visible = index < _totalCells;
 		if(cell.reset) cell.reset();
 	}
 
 	function _changeCellData(cell, index) {
-		var data = _data[index];
-		if(cell.data === data) return;
+		var data;
+		if(index >= 0 && index < _data.length) {
+			data = _data[index];
+		} else {
+			data = _spaceFillerData;
+		}
+		if(cell.data === data && cell.index === index) return;
 		cell.index = index;
 
 		//set/change cell behaviour
@@ -226,7 +231,6 @@ function GridView(params) {
 
 	function _updateCellPool() {
 		_cellPoolSize = _gridCellPositioner.getPoolSize(_gridSolution);
-		_cellPoolSize = Math.min(_cellPoolSize, _totalCells);
 		if(_actualCellPoolSize !== _cellPoolSize) {
 			while(_actualCellPoolSize < _cellPoolSize) {
 				_createCell();
@@ -244,7 +248,7 @@ function GridView(params) {
 		_totalCells = data.length;
 		_updateCellPool();
 		_cells.forEach(function(cell) {
-			cell.index = -1;
+			cell.index = -100;
 			cell.needsUpdate = true;
 		});
 	}
@@ -313,6 +317,10 @@ function GridView(params) {
 		return _camera;
 	}
 
+	function _setSpaceFillerData(spaceFillerData) {
+		_spaceFillerData = spaceFillerData;
+	}
+
 	function changed() {
 		var anythingChanged = false;
 		for (var i = _cells.length - 1; i >= 0; i--) {
@@ -339,6 +347,7 @@ function GridView(params) {
 	this.getScene = _getScene;
 	this.getCamera = _getCamera;
 	this.getCellRectangleOfIndex = getCellRectangleOfIndex;
+	this.spaceFillerData = _setSpaceFillerData;
 	this.changed = changed;
 }
 
