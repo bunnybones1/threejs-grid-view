@@ -46,7 +46,7 @@ function GridView(params) {
 	var _spaceFillerData = params.spaceFillerData || {
 		cellDecorator: cellDecoratorBlank
 	}
-	var CellClass = params.CellClass ? params.CellClass : CameraDisplayObject3D;
+	var _CellClass = params.CellClass || CameraDisplayObject3D;
 
 	var onCellResetSignal = new Signal();
 
@@ -142,7 +142,7 @@ function GridView(params) {
 			cell.resolutionHeight *= _renderer.devicePixelRatio
 		}
 		if(!cell.name) cell.name = generateName('cell');
-		cell.object3D = new CellClass(cell);
+		cell.object3D = new _CellClass(cell);
 		if(!cell.object3D.changed) cell.object3D.changed = noop;
 		var oldUpdate = cell.object3D.update.bind(cell.object3D);
 		function newUpdate() {
@@ -321,6 +321,18 @@ function GridView(params) {
 		_spaceFillerData = spaceFillerData;
 	}
 
+	function _setCellClass(CellClass) {
+		if(_CellClass === CellClass) return;
+		_CellClass = CellClass;
+		var total = _cells.length;
+		while(_cells.length > 0) {
+			_destroyCell();
+		}
+		while(_cells.length < total) {
+			_createCell();
+		}
+	}
+
 	function changed() {
 		var anythingChanged = false;
 		for (var i = _cells.length - 1; i >= 0; i--) {
@@ -347,7 +359,8 @@ function GridView(params) {
 	this.getScene = _getScene;
 	this.getCamera = _getCamera;
 	this.getCellRectangleOfIndex = getCellRectangleOfIndex;
-	this.spaceFillerData = _setSpaceFillerData;
+	this.setSpaceFillerData = _setSpaceFillerData;
+	this.setCellClass = _setCellClass;
 	this.changed = changed;
 }
 
