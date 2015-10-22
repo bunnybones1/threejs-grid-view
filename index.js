@@ -295,8 +295,8 @@ function GridView(params) {
 		_this.gridSolution = _gridSolution;
 	}
 
-	function _setPreferredCellCount(val) {
-		if(_lastPreferredCellCount === val) return;
+	function _setPreferredCellCount(val, force) {
+		if(_lastPreferredCellCount === val && !force) return;
 		_lastPreferredCellCount = val;
 		_gridLayout.setPreferredCellCount(val);
 		_solveGrid();
