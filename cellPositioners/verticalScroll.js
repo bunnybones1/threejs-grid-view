@@ -1,15 +1,17 @@
+var wrap = require('number-wrap');
+
 var verticalScroll = {
 	getCellRectangleOfIndex: function (gridSolution, cellIndex) {
 		return {
-			x: (cellIndex % gridSolution.cols) * gridSolution.cellWidth,
-			y: ~~(cellIndex / gridSolution.cols) * gridSolution.cellHeight,
+			x: wrap(cellIndex, 0, gridSolution.cols) * gridSolution.cellWidth,
+			y: (~~((cellIndex / gridSolution.cols)+1)-1) * gridSolution.cellHeight,
 			width: gridSolution.cellWidth,
 			height: gridSolution.cellHeight
 		}
 	},
 	getVisibleIndices: function(gridLayout, gridRectangle, gridSolution) {
 		var indices = [];
-		var firstRow = ~~(gridLayout.scrollY / gridSolution.innerHeight * gridSolution.rows);
+		var firstRow = ~~((gridLayout.scrollY / gridSolution.innerHeight * gridSolution.rows) + 1) - 1;
 		var lastRow = Math.ceil((gridLayout.scrollY+gridRectangle.height) / gridSolution.innerHeight * gridSolution.rows) - 1;
 		for (var iRow = firstRow; iRow <= lastRow; iRow++) {
 			for (var iCol = 0; iCol < gridSolution.cols; iCol++) {
@@ -31,7 +33,7 @@ var verticalScroll = {
 		}
 	},
 	getPoolSize: function(gridSolution) {
-		return gridSolution.cols * (gridSolution.rows+1);
+		return gridSolution.cols * (gridSolution.rows+2);
 	},
 	getIndexOfScroll: function(gridSolution, scroll) {
 		return ~~((scroll + gridSolution.cellHeight * .5) / gridSolution.cellHeight) * gridSolution.cols;

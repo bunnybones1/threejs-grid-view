@@ -37,6 +37,7 @@ function GridView(params) {
 	var _scrollAxisCapitalized = _scrollAxis.toUpperCase();
 	var _margin = params.margin || 0;
 	var _lastPreferredCellCount = 0;
+	var _lastPreferredCellAspectRatio = 1;
 	var _autoClear = params.autoClear || false;
 	var _camera = new THREE.OrthographicCamera(0, 1, 0, 1, -100, 100);
 	var _scene = new THREE.Scene();
@@ -295,10 +296,17 @@ function GridView(params) {
 		_this.gridSolution = _gridSolution;
 	}
 
-	function _setPreferredCellCount(val, force) {
-		if(_lastPreferredCellCount === val && !force) return;
+	function _setPreferredCellCount(val) {
+		if(_lastPreferredCellCount === val) return;
 		_lastPreferredCellCount = val;
 		_gridLayout.setPreferredCellCount(val);
+		_solveGrid();
+	}
+
+	function _setPreferredCellAspectRatio(val) {
+		if(_lastPreferredCellAspectRatio === val) return;
+		_lastPreferredCellAspectRatio = val;
+		_gridLayout.setPreferredCellAspectRatio(val);
 		_solveGrid();
 	}
 
@@ -353,6 +361,7 @@ function GridView(params) {
 	this.getVisibleCells = _getVisibleCells;
 	this.render = _render;
 	this.setPreferredCellCount = _setPreferredCellCount;
+	this.setPreferredCellAspectRatio = _setPreferredCellAspectRatio;
 	this.cells = _cells;
 	this.onCellResetSignal = onCellResetSignal;
 	this.updateCells = _updateCells;
