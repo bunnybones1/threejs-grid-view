@@ -5,7 +5,7 @@ var onReady = function() {
 		getUrlParam = require('urlparams').getParam,
 		Resize = require('input-resize'),
 		RenderRegion = require('threejs-render-region'),
-		ScrollPhysics = require('touch-scroll-physics');
+		ScrollPhysics = require('touch-scroll-physics'),
 		cellDecoratorJpeg = require('./cellDecorators/jpeg'),
 		cellDecoratorCctv = require('./cellDecorators/cctv');
 
@@ -20,7 +20,7 @@ var onReady = function() {
 		useRafPolyfill: false
 	});
 
-	testScene.skipFrames = 20;
+	testScene.skipFrames = 0;
 
 	testScene.bindRenderer(view.renderer);
 	view.renderManager.onEnterFrame.add(testScene.onEnterFrame);
@@ -28,9 +28,9 @@ var onReady = function() {
 	// 
 	var w = window.innerWidth;
 	var h = window.innerHeight;
-	var offsetGridX = w * .5;
-	var renderRegionLeft = new RenderRegion(w, h, 0, 0, w*.5, h);
-	var renderRegionRight = new RenderRegion(w, h, w*.5, 0, w*.5, h);
+	var offsetGridX = w * 0.5;
+	var renderRegionLeft = new RenderRegion(w, h, 0, 0, w*0.5, h);
+	var renderRegionRight = new RenderRegion(w, h, w*0.5, 0, w*0.5, h);
 
 
 	var totalCells = 1000;
@@ -40,26 +40,27 @@ var onReady = function() {
 	var lookTarget = new THREE.Vector3(0, 1, 0);
 
 	var gridCameras1 = [];
-	for(var i = 0; i < totalCells; i++) {
-		var camera = new THREE.PerspectiveCamera();
+	var i, camera;
+	for(i = 0; i < totalCells; i++) {
+		camera = new THREE.PerspectiveCamera();
 		camera.position.set(
-			(Math.random() - .5) * 8,
+			(Math.random() - 0.5) * 8,
 			3,
-			(Math.random() - .5) * 8
-		)
+			(Math.random() - 0.5) * 8
+		);
 		// testScene.scene.add(camera);
 		camera.lookAt(lookTarget);
 		gridCameras1.push(camera);
 	}
 
 	var gridCameras2 = [];
-	for(var i = 0; i < totalCells; i++) {
-		var camera = new THREE.PerspectiveCamera();
+	for(i = 0; i < totalCells; i++) {
+		camera = new THREE.PerspectiveCamera();
 		camera.position.set(
-			(Math.random() - .5) * 8,
+			(Math.random() - 0.5) * 8,
 			3,
-			(Math.random() - .5) * 8
-		)
+			(Math.random() - 0.5) * 8
+		);
 		// testScene.scene.add(camera);
 		camera.lookAt(lookTarget);
 		gridCameras2.push(camera);
@@ -72,12 +73,12 @@ var onReady = function() {
 		height: window.innerHeight
 	};
 
-	var scrollAxis = 'x';
+	var scrollAxis = 'y';
 
 	var gridSolverParams = {
 		preferredCellAspectRatio: 1,
 		scoreWeightFill: 10
-	}
+	};
 
 	var grid = new GridView({
 		renderer: view.renderer,
@@ -99,7 +100,7 @@ var onReady = function() {
 
 	var cellsData2 = [];
 	var testImages = [];
-	for (var i = 1; i <= 5; i++) {
+	for (i = 1; i <= 5; i++) {
 		testImages.push('testAssets/fractal' + i + '.jpg');
 	}
 	gridCameras2.forEach(function(camera, i) {
@@ -157,7 +158,7 @@ var onReady = function() {
 	var scrollPhysicsParams = {
 		gutterSize: 100,
 		dipToClosestCell: true
-	}
+	};
 
 	var updateScroll;
 	function updateScrollX() {
@@ -219,6 +220,7 @@ var onReady = function() {
 	});
 	view.renderManager.onEnterFrame.add(function() {
 		renderRegionLeft.apply(view.renderer);
+		view.renderer.render(testScene.scene, camera);
 	});
 	view.renderManager.onExitFrame.add(function() {
 		renderRegionRight.apply(view.renderer);
@@ -229,14 +231,14 @@ var onReady = function() {
 
 
 	function onResize(w, h) {
-		offsetGridX = w * .5;
-		renderRegionLeft.setFullSizeAndRegion(w, h, 0, 0, w*.5, h);
-		renderRegionRight.setFullSizeAndRegion(w, h, w*.5, 0, w*.5, h);
+		offsetGridX = w * 0.5;
+		renderRegionLeft.setFullSizeAndRegion(w, h, 0, 0, w*0.5, h);
+		renderRegionRight.setFullSizeAndRegion(w, h, w*0.5, 0, w*0.5, h);
 	}
 	renderRegionRight.onChangeSignal.add(function(x, y, w, h) {
 		view.camera.aspect = w/h;
 		view.camera.updateProjectionMatrix();
-	})
+	});
 
 	renderRegionRight.onChangeSignal.add(function(x, y, w, h) {
 		rectangle.width = w;
@@ -251,7 +253,7 @@ var onReady = function() {
 	grid.setData(cellsData1);
 	resizeScrollPhysics(scrollPhysicsParams, window.innerWidth * 5, window.height);
 
-}
+};
 
 var loadAndRunScripts = require('loadandrunscripts');
 loadAndRunScripts(
