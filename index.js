@@ -26,6 +26,7 @@ function GridView(params) {
 
 	var _changed = true;
 
+	var _gridCellPositioner;
 	var _useDevicePixelRatio = params.useDevicePixelRatio || true;
 	var _scrollX = params.scrollX || 0;
 	var _scrollY = params.scrollY || 0;
@@ -58,13 +59,7 @@ function GridView(params) {
 	var _scrollXScale = 0;
 	var _scrollYScale = 0;
 
-	switch(_scrollAxis) {
-		case 'x': 
-			_gridCellPositioner = gridCellPositionerX;
-			break;
-		default: 
-			_gridCellPositioner = gridCellPositionerY;
-	}
+	_setScrollAxis(_scrollAxis);
 
 	var _actualCellPoolSize = 0;
 	var _cellPoolSize = 0;
@@ -93,7 +88,7 @@ function GridView(params) {
 		}
 		_lastScrollX = _gridLayout.scrollX;
 		_lastScrollY = _gridLayout.scrollY;
-	};
+	}
 
 	function _getCellUnderPosition(x, y) {
 		var intersection = _gridCellPositioner.getCellIntersectionUnderPosition(_gridLayout, _rectangle, _gridSolution, x, y);
@@ -139,8 +134,8 @@ function GridView(params) {
 		};
 
 		if(_useDevicePixelRatio) {
-			cell.resolutionWidth *= _renderer.devicePixelRatio,
-			cell.resolutionHeight *= _renderer.devicePixelRatio
+			cell.resolutionWidth *= _renderer.devicePixelRatio;
+			cell.resolutionHeight *= _renderer.devicePixelRatio;
 		}
 		if(!cell.name) cell.name = generateName('cell');
 		cell.object3D = new _CellClass(cell);
@@ -296,6 +291,18 @@ function GridView(params) {
 		_this.gridSolution = _gridSolution;
 	}
 
+	function _setScrollAxis(axis) {
+		_scrollAxis = axis;
+		switch(_scrollAxis) {
+			case 'x': 
+				_gridCellPositioner = gridCellPositionerX;
+				break;
+			default: 
+				_gridCellPositioner = gridCellPositionerY;
+		}
+		_scrollAxisCapitalized = _scrollAxis.toUpperCase();
+	}
+
 	function _setPreferredCellCount(val) {
 		if(_lastPreferredCellCount === val) return;
 		_lastPreferredCellCount = val;
@@ -345,7 +352,7 @@ function GridView(params) {
 		var anythingChanged = false;
 		for (var i = _cells.length - 1; i >= 0; i--) {
 			anythingChanged = _cells[i].object3D.changed() || anythingChanged;
-		};
+		}
 		if(_changed) {
 			anythingChanged = true;
 			_changed = false;
@@ -360,6 +367,7 @@ function GridView(params) {
 	this.getCellUnderPosition = _getCellUnderPosition;
 	this.getVisibleCells = _getVisibleCells;
 	this.render = _render;
+	this.setScrollAxis = _setScrollAxis;
 	this.setPreferredCellCount = _setPreferredCellCount;
 	this.setPreferredCellAspectRatio = _setPreferredCellAspectRatio;
 	this.cells = _cells;
