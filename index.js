@@ -154,6 +154,7 @@ function GridView(params) {
 		}
 		cell.changed = changed;
 		if(_debugLevel >= 1) console.log('create', cell.name);
+		cell.index = _cells.length;
 		_cells.push(cell);
 		_scene.add(cell.object3D);
 	}
