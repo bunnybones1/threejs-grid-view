@@ -168,7 +168,7 @@ function GridView(params) {
 	function _layoutCells() {
 		_cells.forEach(function(cell) {
 			cell.needsUpdate = true;
-			_layoutCell(cell, cell.index);
+			_layoutCell(cell, cell.index || 0);
 		});
 	}
 
