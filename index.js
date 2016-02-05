@@ -254,11 +254,12 @@ function GridView(params) {
 		_marginY = 0;
 		if(_totalCells > _gridSolution.cellCount) {
 			if(_scrollAxis === 'x') {
-				_marginX = 0.25;
+				_marginX = defaultMarginX;
 			} else {
-				_marginY = 0.25;
+				_marginY = defaultMarginY;
 			}
 		}
+		console.log('MARGINS', _marginX, _marginY);
 
 		var paddedWidth = _rectangle.width + _gridSolution.cellWidth * _marginX;
 		var ratioWidth = _rectangle.width / paddedWidth;
@@ -359,6 +360,34 @@ function GridView(params) {
 		}
 		return anythingChanged;
 	}
+
+	var defaultMarginX = 0.25;
+	var defaultMarginY = 0.25;
+
+	Object.defineProperty(this,
+		'defaultMarginX',
+		{
+			set: function(value) {
+				defaultMarginX = value;
+				// _gridLayout.setMarginX(value);
+			}, 
+			get: function() {
+				return defaultMarginX;
+			}
+		}
+	);
+	Object.defineProperty(this,
+		'defaultMarginY',
+		{
+			set: function(value) {
+				defaultMarginY = value;
+				// _gridLayout.setMarginY(value);
+			}, 
+			get: function() {
+				return defaultMarginY;
+			}
+		}
+	);
 
 	this.setData = _setData;
 	this.gridLayout = _gridLayout;
