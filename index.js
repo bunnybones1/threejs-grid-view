@@ -47,7 +47,7 @@ function GridView(params) {
 	var _data;
 	var _spaceFillerData = params.spaceFillerData || {
 		cellDecorator: cellDecoratorBlank
-	}
+	};
 	var _CellClass = params.CellClass || CameraDisplayObject3D;
 
 	var onCellResetSignal = new Signal();
@@ -160,7 +160,7 @@ function GridView(params) {
 
 	function _destroyCell() {
 		var cell = _cells.pop();
-		if(_debugLevel >= 1) console.log('destroy', cell.name)
+		if(_debugLevel >= 1) console.log('destroy', cell.name);
 		_scene.remove(cell.object3D);
 		cell.object3D.destroy();
 	}
@@ -178,11 +178,13 @@ function GridView(params) {
 		cellRectangle.y = _rectangle.height - cellRectangle.y - cellRectangle.height + _rectangle.y;
 		if(_debugLevel >= 1) console.log('layout', cell.name, index);
 		setPlaneToOrthographicRectangle(cell.object3D, cellRectangle);
-		if(cell.x === cellRectangle.x
-			&& cell.y === cellRectangle.y
-			&& cell.width === cellRectangle.width
-			&& cell.height === cellRectangle.height
-		) return;
+		if(cell.x === cellRectangle.x &&
+			cell.y === cellRectangle.y &&
+			cell.width === cellRectangle.width &&
+			cell.height === cellRectangle.height
+		) {
+			return;
+		}
 		cell.x = cellRectangle.x;
 		cell.y = cellRectangle.y;
 		cell.width = cellRectangle.width;
@@ -259,7 +261,7 @@ function GridView(params) {
 				_marginY = defaultMarginY;
 			}
 		}
-		console.log('MARGINS', _marginX, _marginY);
+		if(_debugLevel >= 1) console.log('MARGINS', _marginX, _marginY);
 
 		var paddedWidth = _rectangle.width + _gridSolution.cellWidth * _marginX;
 		var ratioWidth = _rectangle.width / paddedWidth;
