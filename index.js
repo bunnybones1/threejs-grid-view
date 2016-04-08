@@ -7,6 +7,7 @@ var cellDecoratorBlank = require('./cellDecorators/blank');
 var Signal = require('signals').Signal;
 var nameID = 0;
 var wrap = require('number-wrap');
+var defaults = require('lodash.defaults');
 
 function noop() {}
 
@@ -27,6 +28,7 @@ function GridView(params) {
 	var _changed = true;
 
 	var _gridCellPositioner;
+	var _defaultCellParams = params.defaultCellParams || {};
 	var _useDevicePixelRatio = params.useDevicePixelRatio || true;
 	var _scrollX = params.scrollX || 0;
 	var _scrollY = params.scrollY || 0;
@@ -132,6 +134,7 @@ function GridView(params) {
 			renderer: _renderer,
 			fresh: true
 		};
+		defaults(cell, _defaultCellParams);
 
 		if(_useDevicePixelRatio) {
 			cell.resolutionWidth *= _renderer.devicePixelRatio;
