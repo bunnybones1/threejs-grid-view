@@ -12,7 +12,8 @@ var _mesh = new THREE.Mesh(_geometry, _material);
 _scene.add(_mesh);
 _scene.add(_camera);
 
-function _setMap(map, targetAspect) {
+function _setMap(map, targetAspect, scale) {
+	scale = scale || 1;
 	var mapAspect = map.image.height / map.image.width;
 	var aspect = targetAspect / mapAspect;
 	if(aspect > 1) {
@@ -22,8 +23,11 @@ function _setMap(map, targetAspect) {
 		_mesh.scale.set(1, 1/aspect, 1);
 		// _material.color.setRGB(.75+(Math.random()*.25), 1+(Math.random()*.25), .75+(Math.random()*.25));
 	}
+	_mesh.scale.multiplyScalar(scale);
 	_material.map = map;
 }
+
+
 
 function _clearMap() {
 	_mesh.scale.set(1, 1, 1);
@@ -37,5 +41,6 @@ var textureTransfer = {
 	mesh: _mesh,
 	setMap: _setMap,
 	clearMap: _clearMap
-}
+};
+
 module.exports = textureTransfer;
